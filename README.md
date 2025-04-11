@@ -4,16 +4,25 @@ phpdbg is a gdb plugin for assisting in debugging analysis of php pwn.
 ```sh
 git clone https://github.com/GeekCmore/phpdbg.git
 cd phpdbg
-echo /path/to/phpdbg >> ~/.gdbinit
+echo "source /path/to/phpdbg" >> ~/.gdbinit
 sudo apt install php-cli-dbgsym
 ```
 
 ## Command
 
-### php-small-heap
+### pstart
+When launching the program, use `pstart` instead of `start`, which will stop at the location where the extension module loading is completed, after which you can set a breakpoint in the extension module.
+```
+gdb> pstart
+...
+gdb> b zif_some_mod_func
+```
+
+
+### psmall
 This command show php zend small heap like this:
 ```
-pwndbg> psmall
+gdb> psmall
 0x8 [  0]: 0x0 ◂— 0
 0x10 [  0]: 0x0 ◂— 0
 0x18 [  0]: 0x0 ◂— 0

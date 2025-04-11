@@ -1,9 +1,9 @@
 import gdb
 from collections import OrderedDict
 
-class PhpSmallHeap(gdb.Command):
+class PhpSmallHeapCommand(gdb.Command):
     def __init__(self):
-        super(PhpSmallHeap, self).__init__("psmall", gdb.COMMAND_USER)
+        super(PhpSmallHeapCommand, self).__init__("psmall", gdb.COMMAND_USER)
         self.COLOR_RESET = "\033[0m"
         self.COLOR_SIZE = "\033[33m"
         self.COLOR_COUNT = "\033[36m"
@@ -96,4 +96,18 @@ class PhpSmallHeap(gdb.Command):
                   f"[{self.COLOR_COUNT}{count:3}{self.COLOR_RESET}]: "
                   f"{pointer_str if count > 0 else f'{self.COLOR_ADDR}0x0 ◂— 0{self.COLOR_RESET}'}")
 
-PhpSmallHeap()
+
+class PhpStartCommand(gdb.Command):
+    def __init__(self):
+        super(PhpStartCommand, self).__init__("pstart", gdb.COMMAND_USER)
+    
+    def invoke(self, arg, from_tty):
+        gdb.execute("start")
+        gdb.Breakpoint("php_module_startup")
+        gdb.execute("continue")
+        gdb.execute("finish")
+
+
+# 注册自定义命令
+PhpStartCommand()
+PhpSmallHeapCommand()
