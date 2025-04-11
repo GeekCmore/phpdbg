@@ -1,9 +1,9 @@
-# phpdbg
-phpdbg is a gdb plugin for assisting in debugging analysis of php pwn.
+# phpgdb
+phpgdb is a gdb plugin for assisting in debugging analysis of php pwn.
 ## Install
 ```sh
-git clone https://github.com/GeekCmore/phpdbg.git
-echo "source /path/to/phpdbg/phpdbg.py" >> ~/.gdbinit
+git clone https://github.com/GeekCmore/phpgdb.git
+echo "source /path/to/phpgdb/phpgdb.py" >> ~/.gdbinit
 sudo apt install php-cli-dbgsym
 ```
 
