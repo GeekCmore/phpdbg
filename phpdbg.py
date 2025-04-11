@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 class PhpSmallHeap(gdb.Command):
     def __init__(self):
-        super(PhpSmallHeap, self).__init__("php-small-heap", gdb.COMMAND_USER)
+        super(PhpSmallHeap, self).__init__("psmall", gdb.COMMAND_USER)
         self.COLOR_RESET = "\033[0m"
         self.COLOR_SIZE = "\033[33m"
         self.COLOR_COUNT = "\033[36m"

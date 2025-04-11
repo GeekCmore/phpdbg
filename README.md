@@ -13,7 +13,7 @@ sudo apt install php-cli-dbgsym
 ### php-small-heap
 This command show php zend small heap like this:
 ```
-pwndbg> php-small-heap
+pwndbg> psmall
 0x8 [  0]: 0x0 ◂— 0
 0x10 [  0]: 0x0 ◂— 0
 0x18 [  0]: 0x0 ◂— 0
