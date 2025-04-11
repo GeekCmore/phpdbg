@@ -79,7 +79,7 @@ class PhpSmallHeapCommand(gdb.Command):
                     break
 
             # Build pointer string
-            pointer_str = " -> ".join(pointers)
+            pointer_str = " —▸ ".join(pointers)
             if count > 0:
                 final_value = ""
                 if cycle_start is not None:
@@ -280,9 +280,6 @@ class PhpElement(gdb.Command):
             return
 
         self.print_result(addr, result)
-
-PhpElement()
-
 
 # 注册自定义命令
 PhpStartCommand()
