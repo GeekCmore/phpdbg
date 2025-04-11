@@ -17,6 +17,44 @@ gdb> pstart
 gdb> b zif_some_mod_func
 ```
 
+### pheap
+Print the topmost heap management structure.
+```
+gdb> pheap
+$2 = {
+  use_custom_heap = 0x0,
+  storage = 0x0,
+  size = 0x30,
+  peak = 0x30,
+  free_slot = {0x0, 0x0, 0x0, 0x0, 0x0, 0x7ffff4e01030, 0x0 <repeats 24 times>},
+  real_size = 0x200000,
+  real_peak = 0x200000,
+  limit = 0xffffffffffffffff,
+  overflow = 0x0,
+  huge_list = 0x0,
+  main_chunk = 0x7ffff4e00000,
+  cached_chunks = 0x0,
+  chunks_count = 0x1,
+  peak_chunks_count = 0x1,
+  cached_chunks_count = 0x0,
+  avg_chunks_count = 0x3ff0000000000000,
+  last_chunks_delete_boundary = 0x0,
+  last_chunks_delete_count = 0x0,
+  custom_heap = {
+    std = {
+      _malloc = 0x0,
+      _free = 0x0,
+      _realloc = 0x0
+    },
+    debug = {
+      _malloc = 0x0,
+      _free = 0x0,
+      _realloc = 0x0
+    }
+  },
+  tracked_allocs = 0x0
+}
+```
 
 ### psmall
 This command show php zend small heap like this:

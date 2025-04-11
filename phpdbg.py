@@ -96,6 +96,12 @@ class PhpSmallHeapCommand(gdb.Command):
                   f"[{self.COLOR_COUNT}{count:3}{self.COLOR_RESET}]: "
                   f"{pointer_str if count > 0 else f'{self.COLOR_ADDR}0x0 ◂— 0{self.COLOR_RESET}'}")
 
+class PhpHeap(gdb.Command):
+    def __init__(self):
+        super(PhpHeap, self).__init__("pheap", gdb.COMMAND_USER)
+    
+    def invoke(self, arg, from_tty):
+        gdb.execute("p/x *alloc_globals.mm_heap")
 
 class PhpStartCommand(gdb.Command):
     def __init__(self):
@@ -106,8 +112,10 @@ class PhpStartCommand(gdb.Command):
         gdb.Breakpoint("php_module_startup")
         gdb.execute("continue")
         gdb.execute("finish")
+        
 
 
 # 注册自定义命令
 PhpStartCommand()
 PhpSmallHeapCommand()
+PhpHeap()
