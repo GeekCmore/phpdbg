@@ -221,18 +221,18 @@ class PhpElement(gdb.Command):
         if result['type'] == 'huge':
             print(f"{COLOR_TYPE}Block type:{COLOR_RESET}    {COLOR_HUGE}HUGE{COLOR_RESET}")
             print(f"{COLOR_INFO}Block start:{COLOR_RESET}   0x{result['start']:x}")
-            print(f"{COLOR_INFO}Block size:{COLOR_RESET}    {result['size']} bytes")
+            print(f"{COLOR_INFO}Block size:{COLOR_RESET}    {hex(result['size'])} bytes")
         elif result['type'] == 'large':
             print(f"{COLOR_TYPE}Block type:{COLOR_RESET}    {COLOR_LARGE}LARGE{COLOR_RESET}")
             print(f"{COLOR_INFO}Chunk start:{COLOR_RESET}   0x{result['chunk_start']:x}")
-            print(f"{COLOR_INFO}Block start:{COLOR_RESET}    0x{result['start']:x}")
-            print(f"{COLOR_INFO}Block size:{COLOR_RESET}    {result['size']} bytes ({result['pages']} pages)")
+            print(f"{COLOR_INFO}Block start:{COLOR_RESET}   0x{result['start']:x}")
+            print(f"{COLOR_INFO}Block size:{COLOR_RESET}    {hex(result['size'])} bytes ({result['pages']} pages)")
         else:
             print(f"{COLOR_TYPE}Block type:{COLOR_RESET}    {COLOR_TYPE}SMALL{COLOR_RESET}")
             print(f"{COLOR_INFO}Chunk start:{COLOR_RESET}   0x{result['chunk_start']:x}")
-            print(f"{COLOR_INFO}Page start:{COLOR_RESET}     0x{result['page_start']:x}")
+            print(f"{COLOR_INFO}Page start:{COLOR_RESET}    0x{result['page_start']:x}")
             print(f"{COLOR_INFO}Element start:{COLOR_RESET} 0x{result['start']:x}")
-            print(f"{COLOR_INFO}Element size:{COLOR_RESET}  {result['size']} bytes (bin #{result['bin_num']})")
+            print(f"{COLOR_INFO}Element size:{COLOR_RESET}  {hex(result['size'])} bytes (bin #{result['bin_num']})")
             print(f"{COLOR_INFO}Elements/page:{COLOR_RESET} {result['elements']}")
 
     def invoke(self, arg, from_tty):
