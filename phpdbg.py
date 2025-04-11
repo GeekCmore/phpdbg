@@ -1,9 +1,9 @@
 import gdb
 from collections import OrderedDict
 
-class ZendMMFreeSlotsCommand(gdb.Command):
+class PhpSmallHeap(gdb.Command):
     def __init__(self):
-        super(ZendMMFreeSlotsCommand, self).__init__("php-small-help", gdb.COMMAND_USER)
+        super(PhpSmallHeap, self).__init__("php-small-heap", gdb.COMMAND_USER)
         self.COLOR_RESET = "\033[0m"
         self.COLOR_SIZE = "\033[33m"
         self.COLOR_COUNT = "\033[36m"
@@ -96,4 +96,4 @@ class ZendMMFreeSlotsCommand(gdb.Command):
                   f"[{self.COLOR_COUNT}{count:3}{self.COLOR_RESET}]: "
                   f"{pointer_str if count > 0 else f'{self.COLOR_ADDR}0x0 ◂— 0{self.COLOR_RESET}'}")
 
-ZendMMFreeSlotsCommand()
+PhpSmallHeap()
