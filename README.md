@@ -3,8 +3,7 @@ phpdbg is a gdb plugin for assisting in debugging analysis of php pwn.
 ## Install
 ```sh
 git clone https://github.com/GeekCmore/phpdbg.git
-cd phpdbg
-echo "source /path/to/phpdbg" >> ~/.gdbinit
+echo "source /path/to/phpdbg/phpdbg.py" >> ~/.gdbinit
 sudo apt install php-cli-dbgsym
 ```
 
