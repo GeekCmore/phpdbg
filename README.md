@@ -93,3 +93,15 @@ gdb> psmall
 
 ```
 
+### pelement
+Given an address, find the element it belongs to.
+```
+gdb> pelement 0x7ffff4e57078
+Target address: 0x7ffff4e57078
+Block type:    SMALL
+Chunk start:   0x7ffff4e00000
+Page start:     0x7ffff4e57000
+Element start: 0x7ffff4e57078
+Element size:  24 bytes (bin #2)
+Elements/page: 170
+```

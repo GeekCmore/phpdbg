@@ -1,5 +1,6 @@
 import gdb
 from collections import OrderedDict
+import struct
 
 class PhpSmallHeapCommand(gdb.Command):
     def __init__(self):
@@ -115,7 +116,176 @@ class PhpStartCommand(gdb.Command):
         
 
 
+# ANSI颜色代码
+COLOR_RESET = "\033[0m"
+COLOR_ADDR = "\033[92m"   # 绿色
+COLOR_TYPE = "\033[93m"    # 黄色
+COLOR_INFO = "\033[96m"    # 青色
+COLOR_HUGE = "\033[91m"    # 红色
+COLOR_LARGE = "\033[94m"   # 蓝色
+
+# Zend内存常量
+ZEND_MM_CHUNK_SIZE = 2 * 1024 * 1024  # 2MB
+ZEND_MM_PAGE_SIZE = 4096              # 4KB
+ZEND_MM_PAGES = ZEND_MM_CHUNK_SIZE // ZEND_MM_PAGE_SIZE
+
+class ZendMMChunk:
+    def __init__(self, addr):
+        self.addr = int(addr)
+        self.map = []
+        self.load()
+
+    def load(self):
+        """加载chunk内存结构"""
+        chunk_type = gdb.lookup_type('struct _zend_mm_chunk').pointer()
+        chunk = gdb.Value(self.addr).cast(chunk_type)
+        for i in range(ZEND_MM_PAGES):
+            self.map.append(int(chunk['map'][i]))
+
+class PhpElement(gdb.Command):
+    def __init__(self):
+        super(PhpElement, self).__init__("pelement", gdb.COMMAND_USER)
+    
+    def get_heap(self):
+        """获取堆结构"""
+        return gdb.parse_and_eval('alloc_globals.mm_heap')
+
+    def check_huge_block(self, addr):
+        """检查是否属于huge块"""
+        heap = self.get_heap()
+        huge_list = heap['huge_list']
+        while huge_list:
+            entry = huge_list.dereference()
+            ptr = int(entry['ptr'])
+            size = int(entry['size'])
+            if ptr <= addr < (ptr + size):
+                return (ptr, size)
+            huge_list = entry['next']
+        return None
+
+    def get_chunk(self, addr):
+        """查找包含地址的chunk"""
+        heap = self.get_heap()
+        main_chunk = int(heap['main_chunk'])
+        current = main_chunk
+        while True:
+            chunk_start = current
+            chunk_end = current + ZEND_MM_CHUNK_SIZE
+            if chunk_start <= addr < chunk_end:
+                return ZendMMChunk(chunk_start)
+            next_ptr = int(gdb.Value(current).cast(gdb.lookup_type('struct _zend_mm_chunk').pointer())['next'])
+            if next_ptr == main_chunk:
+                break
+            current = next_ptr
+        return None
+
+    def analyze_small(self, chunk, page_num, addr):
+        """分析Small内存块"""
+        info = chunk.map[page_num]
+        bin_num = info & 0x1F  # 提取bin编号
+        
+        try:
+            element_size = int(gdb.parse_and_eval(f'bin_data_size[{bin_num}]'))
+            elements_per_page = int(gdb.parse_and_eval(f'bin_elements[{bin_num}]'))
+        except:
+            element_size = ZEND_MM_PAGE_SIZE
+            elements_per_page = 1
+
+        # 计算元素精确地址
+        page_start = chunk.addr + page_num * ZEND_MM_PAGE_SIZE
+        element_index = (addr - page_start) // element_size
+        return {
+            'type': 'small',
+            'start': page_start + element_index * element_size,
+            'size': element_size,
+            'bin_num': bin_num,
+            'page_start': page_start,
+            'elements': elements_per_page
+        }
+
+    def analyze_large(self, chunk, page_num):
+        """分析Large内存块"""
+        info = chunk.map[page_num]
+        pages = info & 0x3FF  # 提取页面数量
+        return {
+            'type': 'large',
+            'start': chunk.addr + page_num * ZEND_MM_PAGE_SIZE,
+            'size': pages * ZEND_MM_PAGE_SIZE,
+            'pages': pages
+        }
+
+    def print_result(self, addr, result):
+        """彩色输出结果"""
+        print(f"{COLOR_ADDR}Target address:{COLOR_RESET} 0x{addr:x}")
+        
+        if result['type'] == 'huge':
+            print(f"{COLOR_TYPE}Block type:{COLOR_RESET}    {COLOR_HUGE}HUGE{COLOR_RESET}")
+            print(f"{COLOR_INFO}Block start:{COLOR_RESET}   0x{result['start']:x}")
+            print(f"{COLOR_INFO}Block size:{COLOR_RESET}    {result['size']} bytes")
+        elif result['type'] == 'large':
+            print(f"{COLOR_TYPE}Block type:{COLOR_RESET}    {COLOR_LARGE}LARGE{COLOR_RESET}")
+            print(f"{COLOR_INFO}Chunk start:{COLOR_RESET}   0x{result['chunk_start']:x}")
+            print(f"{COLOR_INFO}Block start:{COLOR_RESET}    0x{result['start']:x}")
+            print(f"{COLOR_INFO}Block size:{COLOR_RESET}    {result['size']} bytes ({result['pages']} pages)")
+        else:
+            print(f"{COLOR_TYPE}Block type:{COLOR_RESET}    {COLOR_TYPE}SMALL{COLOR_RESET}")
+            print(f"{COLOR_INFO}Chunk start:{COLOR_RESET}   0x{result['chunk_start']:x}")
+            print(f"{COLOR_INFO}Page start:{COLOR_RESET}     0x{result['page_start']:x}")
+            print(f"{COLOR_INFO}Element start:{COLOR_RESET} 0x{result['start']:x}")
+            print(f"{COLOR_INFO}Element size:{COLOR_RESET}  {result['size']} bytes (bin #{result['bin_num']})")
+            print(f"{COLOR_INFO}Elements/page:{COLOR_RESET} {result['elements']}")
+
+    def invoke(self, arg, from_tty):
+        args = gdb.string_to_argv(arg)
+        if len(args) != 1:
+            print(f"{COLOR_INFO}Usage: phpmm <address>{COLOR_RESET}")
+            return
+
+        try:
+            addr = int(gdb.parse_and_eval(args[0]))
+        except:
+            print(f"{COLOR_INFO}Invalid address format{COLOR_RESET}")
+            return
+
+        # 1. 检查huge块
+        huge_block = self.check_huge_block(addr)
+        if huge_block:
+            self.print_result(addr, {
+                'type': 'huge',
+                'start': huge_block[0],
+                'size': huge_block[1]
+            })
+            return
+
+        # 2. 查找chunk
+        chunk = self.get_chunk(addr)
+        if not chunk:
+            print(f"{COLOR_INFO}Address not in any chunk{COLOR_RESET}")
+            return
+
+        # 3. 分析chunk内分配
+        page_num = (addr - chunk.addr) // ZEND_MM_PAGE_SIZE
+        info = chunk.map[page_num]
+        
+        if info & 0x80000000:  # SRUN (SMALL)
+            result = self.analyze_small(chunk, page_num, addr)
+            result['chunk_start'] = chunk.addr
+            result['type'] = 'small'
+        elif info & 0x40000000:  # LRUN (LARGE)
+            result = self.analyze_large(chunk, page_num)
+            result['chunk_start'] = chunk.addr
+            result['type'] = 'large'
+        else:
+            print(f"{COLOR_INFO}Address points to free memory{COLOR_RESET}")
+            return
+
+        self.print_result(addr, result)
+
+PhpElement()
+
+
 # 注册自定义命令
 PhpStartCommand()
 PhpSmallHeapCommand()
 PhpHeap()
+PhpElement()
